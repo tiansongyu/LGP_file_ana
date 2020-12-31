@@ -42,7 +42,7 @@ class lgp_ana
 {
 public:
     lgp_ana();
-    LGP_DATA find_data(const char* file_dir);
+    LGP_DATA find_data(const char* file_dir,const char* _file_name);
 
 };
 

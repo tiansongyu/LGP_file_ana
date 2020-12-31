@@ -4,16 +4,21 @@ lgp_ana::lgp_ana()
 {
 
 }
-LGP_DATA lgp_ana::find_data(const char* file_dir)
+LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
 {
-    qDebug() << QString("%1").arg(file_dir);
+    qDebug() << QString("%1").arg(_file_dir);
 
     LGP_DATA tmp_lgp;
-    const char* file_name = file_dir;
+    const char* file_name = new char[strlen(_file_name)+1];
+    memcpy((void*)file_name,_file_name,strlen(_file_name)+1);
+
+    const char* file_dir = new char[strlen(_file_dir)+1];
+    memcpy((void*)file_dir,_file_dir,strlen(_file_dir)+1);
+
     int number = 0;
     int current = 0;
     char signature[8];
-     // = { 0x00,0x00,0xC8,0x42,0xcd,0xcc,0x4c,0x3e };
+    // = { 0x00,0x00,0xC8,0x42,0xcd,0xcc,0x4c,0x3e };
     signature[0] = 0x00;
     signature[1] = 0x00;
     signature[2] = 0xC8;
@@ -23,24 +28,34 @@ LGP_DATA lgp_ana::find_data(const char* file_dir)
     signature[6] = 0x4c;
     signature[7] = 0x3e;
 
-    std::ifstream myfile(file_name, std::ios::binary);
+    std::ifstream myfile(file_dir, std::ios::binary);
     myfile.seekg(0, std::ios_base::end);
     const int myfileLen = myfile.tellg();
     myfile.seekg(0, myfile.beg);
 
     if (!myfile.is_open())
     {
-         qDebug()<< "打开文件失败" ;
+        qDebug()<< "打开文件失败" ;
+    }
+    if(myfileLen < 1024 * 1024 )
+    {
+        tmp_lgp.file_time = QString::fromUtf8(file_name);
+        tmp_lgp.ptop = QString("没有数据");
+        tmp_lgp.change = QString("没有数据");
+        tmp_lgp.frequency = QString("没有数据");
+        tmp_lgp.acceleration = QString("没有数据");
+
+        return tmp_lgp;
     }
     char* lgd_file = new char[myfileLen];
     memset(lgd_file, 0, myfileLen);
-     qDebug() << "读取了 " << myfileLen << " 个字节... ";
+    qDebug() << "读取了 " << myfileLen << " 个字节... ";
 
     myfile.read(lgd_file, myfileLen);
     if (myfile)
-         qDebug() << "所有字节扫描完毕." ;
+        qDebug() << "所有字节扫描完毕." ;
     else
-        std::cout << "error: only " << myfile.gcount() << " could be read";
+        qDebug() <<"error: only " << myfile.gcount() << " could be read";
     char* orgin = lgd_file;
     while (number < 2)
     {
@@ -83,8 +98,8 @@ LGP_DATA lgp_ana::find_data(const char* file_dir)
     }
     float result = max - min;
 
-    std::cout << "该文件的应力的值为    " << result << std::endl;
-    std::cout << "该文件的微应变的值为    " << result / 200 * 1000 * 10000 << std::endl;
+    qDebug() <<  "该文件的应力的值为    " << result ;
+    qDebug() <<  "该文件的微应变的值为    " << result / 200 * 1000 * 10000 ;
     tmp_lgp.change = QString("%1").arg(result / 200 * 1000 * 10000);
     float* amplitude_value = new float[256];
     memcpy((void*)amplitude_value, lgd_file + amplitude, 1024);
@@ -99,11 +114,11 @@ LGP_DATA lgp_ana::find_data(const char* file_dir)
     }
     float result_amplitude_value = max_amplitude - min_amplitude;
 
-    std::cout << "该文件的振幅的值为    " << set_float(7) result_amplitude_value << std::endl;
     tmp_lgp.ptop =  QString("%1").arg(result_amplitude_value);
 
-    std::cout << std::endl;
 
     delete[] lgd_file;
+    delete[] file_dir;
+    delete[] file_name;
     return tmp_lgp;
 }

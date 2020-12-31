@@ -7,6 +7,7 @@
 #include<ActiveQt/QAxObject>
 #include <QFileDialog>
 #include <QString>
+#include <qmessagebox.h>
 
 #include <Windows.h>
 
