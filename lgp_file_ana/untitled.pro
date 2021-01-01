@@ -19,12 +19,14 @@ SOURCES += \
     excel.cpp \
     lgp_ana.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    mythread.cpp
 
 HEADERS += \
     excel.h \
     lgp_ana.h \
-    mainwindow.h
+    mainwindow.h \
+    mythread.h
 
 FORMS += \
     mainwindow.ui
