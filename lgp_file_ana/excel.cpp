@@ -10,7 +10,7 @@ bool excel::create_excel()
 {
 
 
-     return true;
+    return true;
 }
 QString excel::saveas()
 {
@@ -20,21 +20,21 @@ QString excel::saveas()
     //  QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
     //改为:QDesktopServices::storageLocation(QDesktopServices::DesktopLocation),
     file = QFileDialog::getSaveFileName (
-     NULL,                               //父组件
-    "选择生成excel文件存放目录",                              //标题
-     QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),                 //设置路径, .表示当前路径,./表示更目录
-     "Excel(*.xlsx)",     //过滤器
-     &filter  );
+                NULL,                               //父组件
+                "选择生成excel文件存放目录",                              //标题
+                QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),                 //设置路径, .表示当前路径,./表示更目录
+                "Excel(*.xlsx)",     //过滤器
+                &filter  );
 
     return file;
 }
 void  excel::Excel_SetCell(QAxObject *worksheet,EXcel_ColumnType column,int row,QColor color,QString text)
 {
 
-  QAxObject *cell = worksheet->querySubObject("Cells(int,int)", row, column);
-  cell->setProperty("Value", text);
-  QAxObject *font = cell->querySubObject("Font");
-  font->setProperty("Color", color);
+    QAxObject *cell = worksheet->querySubObject("Cells(int,int)", row, column);
+    cell->setProperty("Value", text);
+    QAxObject *font = cell->querySubObject("Font");
+    font->setProperty("Color", color);
 }
 
 //把QVariant转为QList<QList<QVariant> >,用于快速读出的

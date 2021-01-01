@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "fileapi.h"
 
+#pragma execution_character_set("UTF-8")
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -10,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     tmp_excel = new excel();
     tmp_lgp = new lgp_ana();
+    ui->progressBar->setVisible(false);
 }
 
 MainWindow::~MainWindow()
@@ -20,41 +22,26 @@ MainWindow::~MainWindow()
 
 bool MainWindow::produce_excel()
 {
-    /////////////////////////////////////
-    /// \brief file_number
-    ///	std::cout << "选择.lgp文件所在目录" << std::endl;
     std::vector<QString> vfile_name;
-    int file_number = 0;
-    WIN32_FIND_DATA p;
-    char* d = new char[40];
-    sprintf(d, "%s/*.lgp", qstringtochar(ui->dir_name->text()));
-    const size_t cSize = strlen(d)+1;
-    wchar_t* wc = new wchar_t[cSize];
-    mbstowcs (wc, d, cSize);
-    qDebug() << QString("%1").arg(d);
-    HANDLE h = FindFirstFile(wc, &p);
-    if (h == INVALID_HANDLE_VALUE)
+    QFileInfoList lst;;
+    QString tmp_file_name = ui->dir_name->text();
+    if (!GetSpecifiedFormatFiles(tmp_file_name, "", lst,"lgp"))
     {
         qDebug() << "没有找到任何 .lgp文件,请选择有.lgp文件存在的目录" ;
         QMessageBox::about(NULL,  "错误",  "所选文件夹没有找到lgp文件，请确定所选路径中没有中文");
         return false;
     }
-    //std::cout << "从" << dir << "/中找到如下文件" << std::endl;
-    //puts(p.cFileName);
-    vfile_name.push_back(QString::fromWCharArray(p.cFileName));
-    file_number++;
-    while (FindNextFile(h, &p))
+    else
     {
-        //puts(p.cFileName);
-        vfile_name.push_back(QString::fromWCharArray(p.cFileName));
-        file_number++;
+        qDebug() << "成功找到文件";
     }
-    //std::cout << "共找到" << file_number << "个文件" << std::endl << std::endl;
-    int tmp_number = file_number;
-
-    /////////////////////////////////////
-    /// \brief templatePath
-    ///
+    for (QFileInfo data : lst)
+    {
+        //qDebug() << "data=" <<data.fileName();
+        vfile_name.push_back(data.fileName());
+    }
+    int tmp_number = lst.size();
+    qDebug() << tmp_number;
     QString templatePath = "./template.xlsx";
     QFileInfo info(templatePath);
 
@@ -64,7 +51,7 @@ bool MainWindow::produce_excel()
         return 0;
     }
 
-    templatePath = info.absoluteFilePath();                   //获取模板的绝地路径
+    templatePath = info.absoluteFilePath();                   //获取模板的绝对路径
     templatePath = QDir::toNativeSeparators(templatePath);   //转换一下路径,让windows能够识别
 
     QString ExcelFile = QDir::toNativeSeparators(tmp_excel->saveas());  //打开文件保存对话框,找到要保存的位置
@@ -86,7 +73,7 @@ bool MainWindow::produce_excel()
 
     QAxObject *excel = new QAxObject();//建立excel操作对象
     excel->setControl("Excel.Application");//连接Excel控件
-    excel->setProperty("Visible", true);//显示窗体看效果
+    excel->setProperty("Visible", false);//显示窗体看效果
     excel->setProperty("DisplayAlerts", false);//显示警告看效果
     QAxObject *workbooks = excel->querySubObject("WorkBooks");
 
@@ -97,21 +84,16 @@ bool MainWindow::produce_excel()
 
     QAxObject *worksheet = work_book->querySubObject("Sheets(int)",1);     //获取表单1
 
-    tmp_excel->Excel_SetCell(worksheet,ColumnB,2,QColor(74,51,255),"12345");     //设置B2单元格内容为12345
-
-    tmp_excel->Excel_SetCell(worksheet,ColumnB,3,QColor(255,255,0),"B3");     //设置B3单元格内容
-
-    tmp_excel->Excel_SetCell(worksheet,ColumnB,4,QColor(255,0,0),"B4");     //设置B4单元格内容
-
-
-    /*批量一次性设置A6~I106所在内容*/
-    //tmp_excel->Excel_SetCell(worksheet,ColumnB,4,QColor(255,0,0),"B4");     //设置B4单元格内容
     int current_column = 2;
+
+    //QMessageBox::about(NULL,  "生成中",  "生成excel文件中");
+    ui->progressBar->setRange(0,tmp_number);
+    ui->progressBar->setValue(0);
+    ui->progressBar->setVisible(true);
 
     for(int i = 0 ;i < tmp_number ;i++)
     {
         LGP_DATA tmp_lpg_data;
-        qDebug() << vfile_name[i];
         tmp_lpg_data = tmp_lgp->find_data(qstringtochar(ui->dir_name->text()+QString("/")+vfile_name[i]),qstringtochar(vfile_name[i]));
         tmp_excel->Excel_SetCell(worksheet,ColumnA,current_column,QColor(0,0,0),tmp_lpg_data.file_time);
         tmp_excel->Excel_SetCell(worksheet,ColumnB,current_column,QColor(0,0,0),tmp_lpg_data.acceleration);
@@ -119,33 +101,15 @@ bool MainWindow::produce_excel()
         tmp_excel->Excel_SetCell(worksheet,ColumnD,current_column,QColor(0,0,0),tmp_lpg_data.ptop);
         tmp_excel->Excel_SetCell(worksheet,ColumnE,current_column,QColor(0,0,0),tmp_lpg_data.frequency);
         current_column++;
+        ui->progressBar->setValue(i+1);
     }
-
-
-//    QAxObject *user_range = worksheet->querySubObject("Range(const QString&)","A6:I106");
-
-//    QList<QList<QVariant> > datas;
-//    for(int i=1;i<101;i++)
-//    {
-//        QList<QVariant> rows;
-//        for(int j=1;j<10;j++)
-//        {
-//            rows.append(i*j);
-//        }
-//        datas.append(rows);
-//    }
-
-//    QVariant var;
-//    tmp_excel->castListListVariant2Variant(datas,var);
-
-//    user_range->setProperty("Value", var);
-
-
+    ui->label_3->setText("生成excel文件成功...");
     workbook->dynamicCall("Save()" );
-
-
     workbook->dynamicCall("Close()");  //关闭文件
     excel->dynamicCall("Quit()");//关闭excel
+    QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出在"+ExcelFile);
+    ui->label_3->clear();
+    ui->progressBar->setVisible(false);
     return true;
 
 }
@@ -167,4 +131,40 @@ char* MainWindow::qstringtochar(QString qst)
     QByteArray ba = str1.toLocal8Bit();
     char *c_str2 = ba.data();
     return c_str2;
+}
+
+/**
+ * @brief 获取指定目录下特定格式的文件列表
+ * @param dstDir: 目标文件夹
+ * @param targetName: 文件名前缀,eg:"AutoUpdate"
+ * @param list: 得到的文件列表
+ * @param szSuffix: 文件后缀名
+ */
+bool MainWindow::GetSpecifiedFormatFiles(
+        const QString & dstDir,
+        const QString & targetName,
+        QFileInfoList & list,
+        QString suffix = "lgp")
+{
+    // 获取目录文件列表
+    QDir dir(dstDir);
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir.setSorting(QDir::Name );
+
+    QStringList filters;
+    filters << QString("*.%1").arg(suffix);
+    dir.setNameFilters(filters);
+
+    QFileInfoList listTmp = dir.entryInfoList();
+    foreach(QFileInfo item, listTmp)
+    {
+        //qDebug() << "item.absoluteFilePath()=" << item.absoluteFilePath();
+        //qDebug() << "item.completeBaseName()=" << item.completeBaseName();
+        if (targetName.toLower() == item.completeBaseName().left(targetName.length()).toLower())
+        {
+            list.append(item);
+        }
+    }
+    qDebug() << listTmp[listTmp.size()-1].completeBaseName();
+    return !list.isEmpty();
 }

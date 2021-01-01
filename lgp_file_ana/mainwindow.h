@@ -9,6 +9,11 @@
 #include <QString>
 #include <qmessagebox.h>
 
+#include <QtCore/QCoreApplication>
+#include <QFileInfoList>
+#include <QDir>
+#include <QDebug>
+
 #include <Windows.h>
 
 #include <fstream>
@@ -31,17 +36,21 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     bool produce_excel();
-    char* qstringtochar(QString qst);
     ~MainWindow();
 
 private slots:
     void on_pushButton_clicked();
-
     void on_pushButton_2_clicked();
-
 private:
     Ui::MainWindow *ui;
     excel *tmp_excel;
     lgp_ana *tmp_lgp;
+    char* qstringtochar(QString qst);
+    bool GetSpecifiedFormatFiles(
+            const QString & dstDir,
+            const QString & targetName,
+            QFileInfoList & list,
+            QString suffix);
+
 };
 #endif // MAINWINDOW_H

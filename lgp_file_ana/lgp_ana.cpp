@@ -2,18 +2,18 @@
 
 lgp_ana::lgp_ana()
 {
-
+    QTextCodec* codec =QTextCodec::codecForName("gbk"); // gbk 换成 GB2312 也可以
+    QTextCodec::setCodecForLocale(codec);
 }
 LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
 {
-    qDebug() << QString("%1").arg(_file_dir);
-
     LGP_DATA tmp_lgp;
     const char* file_name = new char[strlen(_file_name)+1];
     memcpy((void*)file_name,_file_name,strlen(_file_name)+1);
 
     const char* file_dir = new char[strlen(_file_dir)+1];
     memcpy((void*)file_dir,_file_dir,strlen(_file_dir)+1);
+    qDebug() << QString("%1").arg(file_dir);
 
     int number = 0;
     int current = 0;
@@ -35,7 +35,14 @@ LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
 
     if (!myfile.is_open())
     {
-        qDebug()<< "打开文件失败" ;
+        qDebug()<< file_name << "打开文件失败" ;
+        tmp_lgp.file_time = QString::fromUtf8(file_name);
+        tmp_lgp.ptop = QString("文件打开失败");
+        tmp_lgp.change = QString("文件打开失败");
+        tmp_lgp.frequency = QString("文件打开失败");
+        tmp_lgp.acceleration = QString("文件打开失败");
+        return tmp_lgp;
+
     }
     if(myfileLen < 1024 * 1024 )
     {
@@ -44,12 +51,11 @@ LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
         tmp_lgp.change = QString("没有数据");
         tmp_lgp.frequency = QString("没有数据");
         tmp_lgp.acceleration = QString("没有数据");
-
         return tmp_lgp;
     }
     char* lgd_file = new char[myfileLen];
     memset(lgd_file, 0, myfileLen);
-    qDebug() << "读取了 " << myfileLen << " 个字节... ";
+    //qDebug() << "读取了 " << myfileLen << " 个字节... ";
 
     myfile.read(lgd_file, myfileLen);
     if (myfile)
@@ -80,9 +86,7 @@ LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
     tmp_lgp.file_time = file_name;
     tmp_lgp.acceleration = QString("%1").arg(*(float*)(lgd_file + current + acceleration_offset));
     tmp_lgp.frequency = QString("%1").arg(*(float*)(lgd_file + current + frequency_offset));
-    qDebug() << "成功找到文件" << file_name << "的目标特征";
-    //qDebug() << "该文件的加速度的值为  " << set_float(4) * (float*)(lgd_file + current + acceleration_offset) ;
-    //qDebug() << "该文件的频率的值为    " << set_float(4) * (float*)(lgd_file + current + frequency_offset) ;
+    //qDebug() << "成功找到文件" << file_name << "的目标特征";
     //计算应力
     float* stress_value = new float[256];
     memcpy((void*)stress_value, lgd_file + stress, 1024);
@@ -98,8 +102,8 @@ LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
     }
     float result = max - min;
 
-    qDebug() <<  "该文件的应力的值为    " << result ;
-    qDebug() <<  "该文件的微应变的值为    " << result / 200 * 1000 * 10000 ;
+    //qDebug() <<  "该文件的应力的值为    " << result ;
+    //qDebug() <<  "该文件的微应变的值为    " << result / 200 * 1000 * 10000 ;
     tmp_lgp.change = QString("%1").arg(result / 200 * 1000 * 10000);
     float* amplitude_value = new float[256];
     memcpy((void*)amplitude_value, lgd_file + amplitude, 1024);
@@ -122,3 +126,5 @@ LGP_DATA lgp_ana::find_data(const char* _file_dir,const char* _file_name)
     delete[] file_name;
     return tmp_lgp;
 }
+
+

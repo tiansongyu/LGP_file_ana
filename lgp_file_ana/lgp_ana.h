@@ -4,6 +4,8 @@
 #include <qstring.h>
 #include <qdebug.h>
 
+#include <qtextcodec.h>
+
 #include <Windows.h>
 
 #include <fstream>
