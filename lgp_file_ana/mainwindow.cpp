@@ -11,8 +11,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     tmp_excel = new excel();
     tmp_lgp = new lgp_ana();
-    ui->progressBar->setVisible(false);
-
+    ui->progressBar->setValue(0);
+    ui->pushButton_6->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -90,7 +90,7 @@ bool MainWindow::produce_excel()
     //QMessageBox::about(NULL,  "生成中",  "生成excel文件中");
     ui->progressBar->setRange(0,tmp_number);
     ui->progressBar->setValue(0);
-    ui->progressBar->setVisible(true);
+    ui->label_3->setText("生成excel文件中...");
 
     for(int i = 0 ;i < tmp_number ;i++)
     {
@@ -110,7 +110,7 @@ bool MainWindow::produce_excel()
     excel->dynamicCall("Quit()");//关闭excel
     QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出文件位于\n"+ExcelFile);
     ui->label_3->clear();
-    ui->progressBar->setVisible(false);
+    ui->progressBar->setValue(0);
     return true;
 
 }
@@ -194,6 +194,8 @@ void MainWindow::on_pushButton_5_clicked()
     tmp_thread = new mythread(listen_dirpath,ui->lineEdit_2->text(), current_column);
     tmp_thread->start();
     qDebug() << "线程开始" ;
+    ui->pushButton_6->setEnabled(true);
+
 }
 
 void MainWindow::on_pushButton_6_clicked()
@@ -203,8 +205,7 @@ void MainWindow::on_pushButton_6_clicked()
     tmp_thread->quit();
     //delete tmp_thread;
     qDebug() << "线程停止" ;
-
-
+    ui->pushButton_6->setEnabled(false);
 }
 int MainWindow::produce_excel_ano()
 {
@@ -263,7 +264,6 @@ int MainWindow::produce_excel_ano()
     //QMessageBox::about(NULL,  "生成中",  "生成excel文件中");
     ui->progressBar->setRange(0,tmp_number);
     ui->progressBar->setValue(0);
-    ui->progressBar->setVisible(true);
 
     for(int i = 0 ;i < tmp_number ;i++)
     {
@@ -284,7 +284,7 @@ int MainWindow::produce_excel_ano()
     excel->dynamicCall("Quit()");//关闭excel
     QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出文件位于\n"+ExcelFile);
     ui->label_3->clear();
-    ui->progressBar->setVisible(false);
+    ui->progressBar->setValue(0);
     return current_column;
 
 }

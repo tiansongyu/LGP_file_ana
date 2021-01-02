@@ -50,7 +50,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>选择导出excel文件存放位置</string>
+     <string>选择导出excel文件位置</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -86,14 +86,14 @@
      </rect>
     </property>
     <property name="text">
-     <string>生成excel存放位置</string>
+     <string>生成excel位置</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>380</x>
-      <y>270</y>
+      <x>320</x>
+      <y>340</y>
       <width>281</width>
       <height>21</height>
      </rect>
