@@ -24,6 +24,7 @@
 #include <string>
 #include <ShlObj.h>
 
+#include "mytype.h"
 #include "lgp_ana.h"
 #include "mythread.h"
 QT_BEGIN_NAMESPACE
@@ -42,7 +43,7 @@ public:
     excel *tmp_excel;
     lgp_ana *tmp_lgp;
     char* qstringtochar(QString qst);
-    bool GetSpecifiedFormatFiles(
+    ERROR_CODE GetSpecifiedFormatFiles(
             const QString & dstDir,
             const QString & targetName,
             QFileInfoList & list,

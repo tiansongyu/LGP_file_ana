@@ -26,7 +26,8 @@ HEADERS += \
     excel.h \
     lgp_ana.h \
     mainwindow.h \
-    mythread.h
+    mythread.h \
+    mytype.h
 
 FORMS += \
     mainwindow.ui

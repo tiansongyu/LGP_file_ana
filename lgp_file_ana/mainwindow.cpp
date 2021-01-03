@@ -26,16 +26,24 @@ bool MainWindow::produce_excel()
     std::vector<QString> vfile_name;
     QFileInfoList lst;;
     QString tmp_file_name = ui->dir_name->text();
-    if (!GetSpecifiedFormatFiles(tmp_file_name, "", lst,"lgp"))
+    auto return_code = GetSpecifiedFormatFiles(tmp_file_name, "", lst,"lgp");
+    switch(return_code)
     {
-        qDebug() << "没有找到任何 .lgp文件,请选择有.lgp文件存在的目录" ;
-        QMessageBox::about(NULL,  "错误",  "所选文件夹没有找到lgp文件，请确定所选路径中没有中文");
+    case ERROR_CODE::EMPTY_DIR:
+        QMessageBox::about(NULL,  "错误",  "没有选择目录，请先选择目录");
         return false;
+    case ERROR_CODE::ERROR_DIR_NAME:
+        QMessageBox::about(NULL,  "错误",  "目录名不合法，不存在该目录");
+        return false;
+    case ERROR_CODE::NO_LGP:
+        qDebug() << "没有找到任何 .lgp文件,请选择有.lgp文件存在的目录" ;
+        QMessageBox::about(NULL,  "错误",  "所选文件夹没有找到lgp文件");
+        return false;
+    default:
+        break;
     }
-    else
-    {
-        qDebug() << "成功找到文件";
-    }
+    qDebug() << "成功找到文件";
+
     for (QFileInfo data : lst)
     {
         //qDebug() << "data=" <<data.fileName();
@@ -141,22 +149,30 @@ char* MainWindow::qstringtochar(QString qst)
  * @param list: 得到的文件列表
  * @param szSuffix: 文件后缀名
  */
-bool MainWindow::GetSpecifiedFormatFiles(
+ERROR_CODE MainWindow::GetSpecifiedFormatFiles(
         const QString & dstDir,
         const QString & targetName,
         QFileInfoList & list,
         QString suffix = "lgp")
 {
+
+    if(ui->dir_name->text().isEmpty())
+        return ERROR_CODE::EMPTY_DIR;
     // 获取目录文件列表
+    QDir tmp_dir(dstDir);
+    if(!QFile::exists(dstDir))
+        return ERROR_CODE::ERROR_DIR_NAME;
+
     QDir dir(dstDir);
     dir.setFilter(QDir::Files | QDir::NoSymLinks);
     dir.setSorting(QDir::Name );
-
     QStringList filters;
     filters << QString("*.%1").arg(suffix);
     dir.setNameFilters(filters);
 
     QFileInfoList listTmp = dir.entryInfoList();
+    if(listTmp.isEmpty())
+        return ERROR_CODE::NO_LGP;
     foreach(QFileInfo item, listTmp)
     {
         //qDebug() << "item.absoluteFilePath()=" << item.absoluteFilePath();
@@ -167,7 +183,7 @@ bool MainWindow::GetSpecifiedFormatFiles(
         }
     }
     qDebug() << listTmp[listTmp.size()-1].completeBaseName();
-    return !list.isEmpty();
+    return ERROR_CODE::FINE;
 }
 void MainWindow::listen_thread()
 {
@@ -183,6 +199,16 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_4_clicked()
 {
+    if(ui->lineEdit->text().isEmpty())
+    {
+        QMessageBox::about(NULL,  "错误",  "请先选择监听文件夹");
+        return ;
+    }
+    if(!QFile::exists(ui->lineEdit->text()))
+    {
+        QMessageBox::about(NULL,  "错误",  "所选文件夹名称不合法");
+        return ;
+    }
     QString ExcelFile = QDir::toNativeSeparators(tmp_excel->saveas());  //打开文件保存对话框,找到要保存的位置
     ui->lineEdit_2->setText(ExcelFile);
 
@@ -190,6 +216,12 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::on_pushButton_5_clicked()
 {
+    if(ui->lineEdit_2->text().isEmpty())
+    {
+        QMessageBox::about(NULL,  "错误",  "请先选择excel文件存储位置");
+        return ;
+    }
+
     int current_column = produce_excel_ano();
     tmp_thread = new mythread(listen_dirpath,ui->lineEdit_2->text(), current_column);
     tmp_thread->start();
@@ -200,10 +232,7 @@ void MainWindow::on_pushButton_5_clicked()
 
 void MainWindow::on_pushButton_6_clicked()
 {
-
-
     tmp_thread->quit();
-    //delete tmp_thread;
     qDebug() << "线程停止" ;
     ui->pushButton_6->setEnabled(false);
 }
