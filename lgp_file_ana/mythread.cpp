@@ -12,7 +12,7 @@ void mythread::produce_excel(QString vfile_name)
 {
     QAxObject *excel = new QAxObject();//建立excel操作对象
     excel->setControl("Excel.Application");//连接Excel控件
-    excel->setProperty("Visible", true);//显示窗体看效果
+    excel->setProperty("Visible", false);//显示窗体看效果
     excel->setProperty("DisplayAlerts", false);//显示警告看效果
     QAxObject *workbooks = excel->querySubObject("WorkBooks");
 

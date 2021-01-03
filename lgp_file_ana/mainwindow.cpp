@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     tmp_lgp = new lgp_ana();
     ui->progressBar->setValue(0);
     ui->pushButton_6->setEnabled(false);
+    ui->pushButton_7->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -43,6 +44,7 @@ bool MainWindow::produce_excel()
         break;
     }
     qDebug() << "成功找到文件";
+    ui->label_3->setText("成功找到lgp文件，正在准备生成lgp文件，请稍后...");
 
     for (QFileInfo data : lst)
     {
@@ -57,6 +59,7 @@ bool MainWindow::produce_excel()
     if(!info.exists())
     {
         qDebug()<<"template.xlsx is NULL";
+        QMessageBox::about(NULL,  "错误",  "缺少模板文件template.xlsx");
         return 0;
     }
 
@@ -78,6 +81,7 @@ bool MainWindow::produce_excel()
         qDebug()<<"报表属性为只读,请检查文件是否已打开!";
         return   0;
     }
+    ui->label_3->setText("正在生成excel文件...");
 
 
     QAxObject *excel = new QAxObject();//建立excel操作对象
@@ -98,7 +102,7 @@ bool MainWindow::produce_excel()
     //QMessageBox::about(NULL,  "生成中",  "生成excel文件中");
     ui->progressBar->setRange(0,tmp_number);
     ui->progressBar->setValue(0);
-    ui->label_3->setText("生成excel文件中...");
+    ui->label_3->setText("正在生成excel文件...");
 
     for(int i = 0 ;i < tmp_number ;i++)
     {
@@ -113,18 +117,19 @@ bool MainWindow::produce_excel()
         ui->progressBar->setValue(i+1);
     }
     ui->label_3->setText("生成excel文件成功...");
+    ui->pushButton_7->setEnabled(true);
+
     workbook->dynamicCall("Save()" );
     workbook->dynamicCall("Close()");  //关闭文件
     excel->dynamicCall("Quit()");//关闭excel
     QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出文件位于\n"+ExcelFile);
-    ui->label_3->clear();
-    ui->progressBar->setValue(0);
     return true;
 
 }
 void MainWindow::on_pushButton_clicked()
 {
-
+    ui->label_3->clear();
+    ui->progressBar->setValue(0);
     QString dirpath = QFileDialog::getExistingDirectory(this, "选择lgp文件所在目录", "./", QFileDialog::ShowDirsOnly);
     ui->dir_name->setText(dirpath);
 
@@ -156,7 +161,7 @@ ERROR_CODE MainWindow::GetSpecifiedFormatFiles(
         QString suffix = "lgp")
 {
 
-    if(ui->dir_name->text().isEmpty())
+    if(dstDir.isEmpty())
         return ERROR_CODE::EMPTY_DIR;
     // 获取目录文件列表
     QDir tmp_dir(dstDir);
@@ -209,6 +214,7 @@ void MainWindow::on_pushButton_4_clicked()
         QMessageBox::about(NULL,  "错误",  "所选文件夹名称不合法");
         return ;
     }
+
     QString ExcelFile = QDir::toNativeSeparators(tmp_excel->saveas());  //打开文件保存对话框,找到要保存的位置
     ui->lineEdit_2->setText(ExcelFile);
 
@@ -221,7 +227,13 @@ void MainWindow::on_pushButton_5_clicked()
         QMessageBox::about(NULL,  "错误",  "请先选择excel文件存储位置");
         return ;
     }
+    if(QFile::exists(ui->lineEdit_2->text()))
+    {
+        QFile::remove(ui->lineEdit_2->text());
+    }
 
+    ui->label_7->setText("将会搜索所选目录中已有的lgp文件...请稍等");
+    QMessageBox::information(NULL,  "提示",  "程序会先将已选目录中的lgp文件数据存储到excel中\n然后开始监听已选目录中新产生的lgp文件\n并保存到excel文件中", QMessageBox::Yes );
     int current_column = produce_excel_ano();
     tmp_thread = new mythread(listen_dirpath,ui->lineEdit_2->text(), current_column);
     tmp_thread->start();
@@ -235,6 +247,8 @@ void MainWindow::on_pushButton_6_clicked()
     tmp_thread->quit();
     qDebug() << "线程停止" ;
     ui->pushButton_6->setEnabled(false);
+    ui->pushButton_5->setEnabled(true);
+    ui->label_8->clear();
 }
 int MainWindow::produce_excel_ano()
 {
@@ -248,6 +262,7 @@ int MainWindow::produce_excel_ano()
         vfile_name.push_back(data.fileName());
     }
     int tmp_number = lst.size();
+    ui->label_7->setText("在所选的目录中找到" + QString::number(tmp_number) + "个lgp文件");
     qDebug() << tmp_number;
     QString templatePath = "./template.xlsx";
     QFileInfo info(templatePath);
@@ -277,7 +292,7 @@ int MainWindow::produce_excel_ano()
 
     QAxObject *excel = new QAxObject();//建立excel操作对象
     excel->setControl("Excel.Application");//连接Excel控件
-    excel->setProperty("Visible", true);//显示窗体看效果
+    excel->setProperty("Visible", false);//显示窗体看效果
     excel->setProperty("DisplayAlerts", false);//显示警告看效果
     QAxObject *workbooks = excel->querySubObject("WorkBooks");
 
@@ -289,11 +304,6 @@ int MainWindow::produce_excel_ano()
     QAxObject *worksheet = work_book->querySubObject("Sheets(int)",1);     //获取表单1
 
     int current_column = 2;
-
-    //QMessageBox::about(NULL,  "生成中",  "生成excel文件中");
-    ui->progressBar->setRange(0,tmp_number);
-    ui->progressBar->setValue(0);
-
     for(int i = 0 ;i < tmp_number ;i++)
     {
         LGP_DATA tmp_lpg_data;
@@ -305,16 +315,31 @@ int MainWindow::produce_excel_ano()
         tmp_excel->Excel_SetCell(worksheet,ColumnD,current_column,QColor(0,0,0),tmp_lpg_data.ptop);
         tmp_excel->Excel_SetCell(worksheet,ColumnE,current_column,QColor(0,0,0),tmp_lpg_data.frequency);
         current_column++;
-        ui->progressBar->setValue(i+1);
     }
-    ui->label_3->setText("生成excel文件成功...");
     workbook->dynamicCall("Save()" );
     workbook->dynamicCall("Close()");  //关闭文件
     excel->dynamicCall("Quit()");//关闭excel
-    QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出文件位于\n"+ExcelFile);
-    ui->label_3->clear();
-    ui->progressBar->setValue(0);
+    ui->label_7->setText("已将所选目录中原有的" + QString::number(tmp_number) + "个lgp文件"+ "lgp存储到所选文件夹中\n将会持续对本文件夹中的lgp文件进行记录\n并存储到指定的excel文件中" );
+    ui->label_8->setText("正在进行监听中!!! \n此时正在记录在所选文件夹中新产生的lgp文件\n并导出到excel文件中");
+    ui->pushButton_5->setEnabled(false);
+    //if(tmp_number>0)
+    //    QMessageBox::about(NULL,  "成功",  "成功找到"+ QString::number(tmp_number)+"个lgp文件，已成功导出excel文件\n导出文件位于\n"+ExcelFile);
     return current_column;
 
 }
 
+
+void MainWindow::on_pushButton_7_clicked()
+{
+    QFile file(ui->excel_dir->text());
+
+    if (file.exists())
+    {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(ui->excel_dir->text()));
+    }
+    else
+    {
+        QMessageBox::about(NULL,  "错误",  "打开文件失败，所选文件不存在，请检查路径");
+    }
+
+}
